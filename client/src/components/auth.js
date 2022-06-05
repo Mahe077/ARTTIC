@@ -1,23 +1,55 @@
-import {useState} from 'react';
+import React from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Card, Form } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import MetaMaskOnboarding from '@metamask/onboarding';
 
 
 const Auth = () => {
-  
+
+    const forwarderOrigin = 'http://localhost:3000';
     // usetstate for storing and retrieving wallet details
     const [data, setdata] = useState({
       address: "",
       username: "",
     });
+
+    //We create a new MetaMask onboarding object to use in our app
+    const onboarding = new MetaMaskOnboarding({ forwarderOrigin });
+
+    const [ onboardButton, setButtonText ] = useState({text:"" , func:()=>{}});
+
+       //------Inserted Code------\\
+    const MetaMaskClientCheck = () => {
+      //Now we check to see if MetaMask is installed
+      if (!isMetaMaskInstalled()) {
+        //If it isn't installed we ask the user to click to install it
+        setButtonText({text:'Click here to install MetaMask!',func:onClickInstall});
+      } else {
+        //If it is installed we change our button text
+        setButtonText({text:'Connect',func:btnhandler});
+        // setButtonText({func:{btnhandler}});
+      }
+    };
     
+    const onClickInstall = () => {
+      //On this object we have startOnboarding which will start the onboarding process for our end user
+      setButtonText({text:'Onboarding in progress',func:btnhandler});
+      onboarding.startOnboarding();
+    }
+
+    //Created check function to see if the MetaMask extension is installed
+    const isMetaMaskInstalled = () => {
+      //Have to check the ethereum binding on the window object to see if it's installed
+      return Boolean( window.ethereum && window.ethereum.isMetaMask);
+    }
+
     // Button handler button for handling a
     // request event for metamask
     const btnhandler = () => {
     
       // Asking if metamask is already present or not
       if (window.ethereum) {
-    
         // res[0] for fetching a first wallet
         window.ethereum
           .request({ method: "eth_requestAccounts" })
@@ -55,17 +87,19 @@ const Auth = () => {
             return response.json();
         })
     }
+
+    React.useEffect(() => MetaMaskClientCheck, []);
     
     return (
-        <>
+        <div className='root'>
         <Card className="text-center">
           <Card.Header>
             <strong>Address: </strong>
             {data.address}
           </Card.Header>
           <Card.Body>
-            <Button onClick={btnhandler} variant="primary">
-              Connect to wallet
+            <Button onClick={onboardButton.func} className="connectButton" variant="primary">
+              {onboardButton.text}
             </Button>
           </Card.Body>
         </Card>
@@ -88,7 +122,7 @@ const Auth = () => {
             <Button variant='primary' type='submit'>Submit</Button>
 
         </Form>
-        </>
+        </div >
     );
   }
 
